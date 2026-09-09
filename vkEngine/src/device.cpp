@@ -129,6 +129,7 @@ void Device::createCommandPool() {
       std::cout << "create command pool failed"<< std::endl;
       return;
     }
+  commandPool_ = commandPool;
 }
 
 void Device::createSurface() {
@@ -235,7 +236,7 @@ SwapChainSupportDetails Device::querySwapChainSupport(vk::PhysicalDevice device)
   details.capabilities = device.getSurfaceCapabilitiesKHR(surface_);
 
   auto format = device.getSurfaceFormatsKHR(surface_);
-  if (format.empty()) {
+  if (!format.empty()) {
     details.formats.resize(format.size());
     details.formats = device.getSurfaceFormatsKHR(surface_);
   }
@@ -243,7 +244,7 @@ SwapChainSupportDetails Device::querySwapChainSupport(vk::PhysicalDevice device)
   uint32_t presentModeCount;
   auto presentMode = device.getSurfacePresentModesKHR(surface_);
 
-  if (presentMode.empty()) {
+  if (!presentMode.empty()) {
     details.presentModes.resize(presentMode.size());
     details.presentModes = device.getSurfacePresentModesKHR(surface_);
   }
