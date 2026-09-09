@@ -1,7 +1,9 @@
-#include "vkEngine/in.hpp"
+#include "vkEngine/newapp.hpp"
+#include <iostream>
 
 int main(){
-    foo();
-    
+    vkEG::FirstApp app{};
+    app.run();
+
     return 0;
 }
