@@ -2,7 +2,7 @@
 
 #include "vkEngine/window.hpp"
 
-// std lib headers
+
 #include <string>
 #include <vector>
 
@@ -23,7 +23,7 @@ struct QueueFamilyIndices {
 };
 
 class Device {
- public:
+public:
 #ifdef NDEBUG
   const bool enableValidationLayers = false;
 #else
@@ -45,28 +45,38 @@ class Device {
   vk::Queue graphicsQueue() { return graphicsQueue_; }
   vk::Queue presentQueue() { return presentQueue_; }
 
-  SwapChainSupportDetails getSwapChainSupport() { return querySwapChainSupport(physicalDevice_); }
-  uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
-  QueueFamilyIndices findPhysicalQueueFamilies() { return findQueueFamilies(physicalDevice_); }
-  vk::Format findSupportedFormat(const std::vector<vk::Format> &candidates, vk::ImageTiling tiling, vk::FormatFeatureFlags features);
+  SwapChainSupportDetails getSwapChainSupport() {
+    return querySwapChainSupport(physicalDevice_);
+  }
+  uint32_t findMemoryType(uint32_t typeFilter,
+                          VkMemoryPropertyFlags properties);
+  QueueFamilyIndices findPhysicalQueueFamilies() {
+    return findQueueFamilies(physicalDevice_);
+  }
+  vk::Format findSupportedFormat(const std::vector<vk::Format> &candidates,
+                                 vk::ImageTiling tiling,
+                                 vk::FormatFeatureFlags features);
 
   // Buffer Helper Functions
-  void createBuffer(vk::DeviceSize size,vk::BufferUsageFlags usage,vk::MemoryPropertyFlags properties,vk::Buffer &buffer,vk::DeviceMemory &bufferMemory);
+  void createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage,
+                    vk::MemoryPropertyFlags properties, vk::Buffer &buffer,
+                    vk::DeviceMemory &bufferMemory);
   vk::CommandBuffer beginSingleTimeCommands();
-  uint32_t findMemoryType(uint32_t typeFilter,vk::MemoryPropertyFlags properties);
+  uint32_t findMemoryType(uint32_t typeFilter,
+                          vk::MemoryPropertyFlags properties);
   void endSingleTimeCommands(vk::CommandBuffer commandBuffer);
-  void copyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size);
-  void copyBufferToImage(vk::Buffer buffer, vk::Image image, uint32_t width, uint32_t height, uint32_t layerCount);
+  void copyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer,
+                  vk::DeviceSize size);
+  void copyBufferToImage(vk::Buffer buffer, vk::Image image, uint32_t width,
+                         uint32_t height, uint32_t layerCount);
 
-  void createImageWithInfo(
-      const vk::ImageCreateInfo &imageInfo,
-      vk::MemoryPropertyFlags properties,
-      vk::Image &image,
-      vk::DeviceMemory &imageMemory);
+  void createImageWithInfo(const vk::ImageCreateInfo &imageInfo,
+                           vk::MemoryPropertyFlags properties, vk::Image &image,
+                           vk::DeviceMemory &imageMemory);
 
   vk::PhysicalDeviceProperties properties_;
 
- private:
+private:
   void createInstance();
   void createSurface();
   void pickPhysicalDevice();
@@ -83,7 +93,7 @@ class Device {
 
   vk::Instance instance_;
   vk::PhysicalDevice physicalDevice_ = VK_NULL_HANDLE;
-  Window& window_;
+  Window &window_;
   vk::CommandPool commandPool_;
 
   vk::Device device_;
@@ -92,8 +102,10 @@ class Device {
   vk::Queue graphicsQueue_;
   vk::Queue presentQueue_;
 
-  const std::vector<const char *> validationLayers = {"VK_LAYER_KHRONOS_validation"};
-  const std::vector<const char *> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+  const std::vector<const char *> validationLayers = {
+      "VK_LAYER_KHRONOS_validation"};
+  const std::vector<const char *> deviceExtensions = {
+      VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 };
 
 }

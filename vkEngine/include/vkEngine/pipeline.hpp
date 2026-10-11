@@ -7,11 +7,24 @@
 #include <vector>
 
 namespace vkEG {
-        struct PipelineConfigInfo{};
+        struct PipelineConfigInfo{
+            vk::Viewport viewport;
+            vk::Rect2D scissor;
+            vk::PipelineViewportStateCreateInfo viewportInfo;
+            vk::PipelineRasterizationStateCreateInfo rasterizationInfo;
+            vk::PipelineMultisampleStateCreateInfo multisampleInfo;
+            vk::PipelineColorBlendAttachmentState colorBlendAttachment;
+            vk::PipelineColorBlendStateCreateInfo colorBlendInfo;
+            vk::PipelineDepthStencilStateCreateInfo depthStencilInfo;
+            vk::PipelineInputAssemblyStateCreateInfo inputAssemblyInfo;
+            vk::PipelineLayout pipelineLayout = nullptr;
+            vk::RenderPass renderPass = nullptr;
+            uint32_t subpass = 0;
+        };
     class Pipeline{
         public:
             Pipeline(Device &device,const PipelineConfigInfo configInfo,const std::string& vertFilepath,const std::string& fragFilepath);
-            ~Pipeline(){};
+            ~Pipeline();
             Pipeline(const Pipeline&) = delete;
             void operator=(const Pipeline&) = delete;
 
