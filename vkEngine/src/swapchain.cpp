@@ -62,7 +62,11 @@ vk::Result Swapchain::acquireNextImage(uint32_t* imageIndex) {
 }
 
 vk::Result Swapchain::submitCommandBuffers(const vk::CommandBuffer* buffers, uint32_t* imageIndex) {
-    if (!buffers || !imageIndex || *imageIndex >= imagesInFlight_.size()) return vk::Result::eErrorInitializationFailed;
+    if (!buffers || !imageIndex || *imageIndex >= imagesInFlight_.size() ||
+        *imageIndex >= renderFinishedSemaphores_.size() || currentFrame_ >= inFlightFences_.size() ||
+        currentFrame_ >= imageAvailableSemaphores_.size()) {
+        return vk::Result::eErrorInitializationFailed;
+    }
 
     if (imagesInFlight_[*imageIndex]) {
         vk::Result waitResult = device_.device().waitForFences(1, &imagesInFlight_[*imageIndex], VK_TRUE, UINT64_MAX);
@@ -71,11 +75,10 @@ vk::Result Swapchain::submitCommandBuffers(const vk::CommandBuffer* buffers, uin
             return waitResult;
         }
     }
-    imagesInFlight_[*imageIndex] = inFlightFences_[currentFrame_];
 
     const vk::PipelineStageFlags waitStages[] = {vk::PipelineStageFlagBits::eColorAttachmentOutput};
     const vk::Semaphore waitSemaphores[] = {imageAvailableSemaphores_[currentFrame_]};
-    const vk::Semaphore signalSemaphores[] = {renderFinishedSemaphores_[currentFrame_]};
+    const vk::Semaphore signalSemaphores[] = {renderFinishedSemaphores_[*imageIndex]};
 
     vk::SubmitInfo submitInfo;
     submitInfo.setWaitSemaphoreCount(1)
@@ -86,11 +89,18 @@ vk::Result Swapchain::submitCommandBuffers(const vk::CommandBuffer* buffers, uin
         .setSignalSemaphoreCount(1)
         .setPSignalSemaphores(signalSemaphores);
 
-    vk::Result result = device_.graphicsQueue().submit(1, &submitInfo, inFlightFences_[currentFrame_]);
+    vk::Result result = device_.device().resetFences(1, &inFlightFences_[currentFrame_]);
+    if (result != vk::Result::eSuccess) {
+        std::cout << "reset frame fence failed" << std::endl;
+        return result;
+    }
+
+    result = device_.graphicsQueue().submit(1, &submitInfo, inFlightFences_[currentFrame_]);
     if (result != vk::Result::eSuccess) {
         std::cout << "submit draw command buffer failed" << std::endl;
         return result;
     }
+    imagesInFlight_[*imageIndex] = inFlightFences_[currentFrame_];
 
     vk::PresentInfoKHR presentInfo;
     presentInfo.setWaitSemaphoreCount(1)
@@ -316,7 +326,7 @@ void Swapchain::createDepthResources() {
 
 void Swapchain::createSyncObjects() {
     imageAvailableSemaphores_.resize(MAX_FRAMES_IN_FLIGHT);
-    renderFinishedSemaphores_.resize(MAX_FRAMES_IN_FLIGHT);
+    renderFinishedSemaphores_.resize(imageCount());
     inFlightFences_.resize(MAX_FRAMES_IN_FLIGHT);
     imagesInFlight_.resize(imageCount());
 
@@ -330,14 +340,17 @@ void Swapchain::createSyncObjects() {
             std::cout << "create image-available semaphore failed" << std::endl;
             return;
         }
-        result = device_.device().createSemaphore(&semaphoreInfo, nullptr, &renderFinishedSemaphores_[i]);
-        if (result != vk::Result::eSuccess) {
-            std::cout << "create render-finished semaphore failed" << std::endl;
-            return;
-        }
         result = device_.device().createFence(&fenceInfo, nullptr, &inFlightFences_[i]);
         if (result != vk::Result::eSuccess) {
             std::cout << "create in-flight fence failed" << std::endl;
+            return;
+        }
+    }
+
+    for (size_t i = 0; i < renderFinishedSemaphores_.size(); ++i) {
+        vk::Result result = device_.device().createSemaphore(&semaphoreInfo, nullptr, &renderFinishedSemaphores_[i]);
+        if (result != vk::Result::eSuccess) {
+            std::cout << "create render-finished semaphore failed" << std::endl;
             return;
         }
     }
