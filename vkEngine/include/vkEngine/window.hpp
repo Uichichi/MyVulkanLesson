@@ -14,6 +14,7 @@ namespace vkEG {
             bool shouldClose();
             //为防止改太多，这里surface就保留指针类型
             void createWindowSurface(vk::Instance instance,vk::SurfaceKHR *surface);
+            vk::Extent2D getExtent(){return {static_cast<uint32_t>(width_),static_cast<uint32_t>(height_)};}
             
         private:
             void initWindow();

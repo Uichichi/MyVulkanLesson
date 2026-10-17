@@ -10,7 +10,6 @@ namespace vkEG {
         struct PipelineConfigInfo{
             vk::Viewport viewport;
             vk::Rect2D scissor;
-            vk::PipelineViewportStateCreateInfo viewportInfo;
             vk::PipelineRasterizationStateCreateInfo rasterizationInfo;
             vk::PipelineMultisampleStateCreateInfo multisampleInfo;
             vk::PipelineColorBlendAttachmentState colorBlendAttachment;
@@ -28,6 +27,7 @@ namespace vkEG {
             Pipeline(const Pipeline&) = delete;
             void operator=(const Pipeline&) = delete;
 
+            void bind(vk::CommandBuffer commandBuffer);
             static PipelineConfigInfo defaultPipelineConfigInfo(uint32_t width,uint32_t height);
         private:
             static std::vector<char> readFile(const std::string& filepath);

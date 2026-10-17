@@ -60,12 +60,19 @@ namespace vkEG{
                        .setVertexAttributeDescriptionCount(0)
                        .setPVertexAttributeDescriptions(nullptr);
 
+        vk::PipelineViewportStateCreateInfo viewportInfo;
+       viewportInfo.setViewportCount(1)                               
+                    .setPViewports(&configInfo.viewport)
+                    .setScissorCount(1)
+                    .setPScissors(&configInfo.scissor);
+
+
         vk::GraphicsPipelineCreateInfo pipelineInfo{};
         pipelineInfo.setStageCount(2)
                     .setPStages(shaderStages)
                     .setPVertexInputState(&vertexInputInfo)
                     .setPInputAssemblyState(&configInfo.inputAssemblyInfo)
-                    .setPViewportState(&configInfo.viewportInfo)
+                    .setPViewportState(&viewportInfo)
                     .setPRasterizationState(&configInfo.rasterizationInfo)
                     .setPMultisampleState(&configInfo.multisampleInfo)
                     .setPColorBlendState(&configInfo.colorBlendInfo)
@@ -99,11 +106,6 @@ namespace vkEG{
 
             configInfo.scissor.setOffset({0, 0})
                               .setExtent({width, height});
-
-            configInfo.viewportInfo.setViewportCount(1)                               
-                               .setPViewports(&configInfo.viewport)
-                               .setScissorCount(1)
-                               .setPScissors(&configInfo.scissor);
 
             configInfo.rasterizationInfo.setDepthClampEnable(vk::False)
                                         .setRasterizerDiscardEnable(vk::False)
@@ -154,5 +156,8 @@ namespace vkEG{
                                        .setBack({});
 
             return configInfo;
+        };
+        void Pipeline::bind(vk::CommandBuffer commandBuffer){
+            commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, graphicsPipeline);
         };
 };
