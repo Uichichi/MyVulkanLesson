@@ -1,12 +1,14 @@
 #include "vkEngine/pipeline.hpp"
 #include "vkEngine/device.hpp"
 #include "vulkan/vulkan.hpp"
+
 #include <cstddef>
 #include <cstdint>
 #include <fstream>
 #include <iostream>
 #include <vector>
 
+#include "vkEngine/model.hpp"
 namespace vkEG{
     Pipeline::Pipeline(Device &device,const PipelineConfigInfo configInfo,const std::string& vertFilepath,const std::string& fragFilepath)
     : device_{device}{
@@ -53,15 +55,16 @@ namespace vkEG{
                 .setModule(fragShaderModule)
                 .setPName("main")
         };
-
+        auto bindingDescriputions = Model::Vertex::getBindingDescriputions();
+        auto attributeDescriputions = Model::Vertex::getAttributeDescriputions();
         vk::PipelineVertexInputStateCreateInfo vertexInputInfo{};
-        vertexInputInfo.setVertexBindingDescriptionCount(0)
-                       .setPVertexBindingDescriptions(nullptr)
-                       .setVertexAttributeDescriptionCount(0)
-                       .setPVertexAttributeDescriptions(nullptr);
+        vertexInputInfo.setVertexBindingDescriptionCount(static_cast<uint32_t>(bindingDescriputions.size()))
+                       .setPVertexBindingDescriptions(bindingDescriputions.data())
+                       .setVertexAttributeDescriptionCount(static_cast<uint32_t>(attributeDescriputions.size()))
+                       .setPVertexAttributeDescriptions(attributeDescriputions.data());
 
         vk::PipelineViewportStateCreateInfo viewportInfo;
-       viewportInfo.setViewportCount(1)                               
+        viewportInfo.setViewportCount(1)                               
                     .setPViewports(&configInfo.viewport)
                     .setScissorCount(1)
                     .setPScissors(&configInfo.scissor);

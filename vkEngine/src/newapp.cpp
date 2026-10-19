@@ -1,5 +1,6 @@
 #include "vkEngine/newapp.hpp"
 #include "vkEngine/device.hpp"
+#include "vkEngine/model.hpp"
 #include "vkEngine/pipeline.hpp"
 
 #include "vulkan/vulkan.hpp"
@@ -8,11 +9,13 @@
 #include <array>
 #include <cstdint>
 #include <memory>
+#include <vector>
 #include "iostream"
 
 
 namespace vkEG {
     FirstApp::FirstApp(){
+        loadModels();
         createPipelineLayout();
         createPipeline();
         createCommandBuffers();
@@ -44,19 +47,19 @@ namespace vkEG {
         appPipeline = std::make_unique<Pipeline>(appDevice,pipelineConfig,"simple_shader.vert.spv","simple_shader.frag.spv");
     };
     void FirstApp::createCommandBuffers(){
-        commandBuffer.resize(appSwapchain.imageCount());
+        commandBuffers.resize(appSwapchain.imageCount());
 
         vk::CommandBufferAllocateInfo allocInfo;
 
         allocInfo.setLevel(vk::CommandBufferLevel::ePrimary)
                  .setCommandPool(appDevice.getCommandPool())
-                 .setCommandBufferCount(static_cast<uint32_t>(commandBuffer.size()));
+                 .setCommandBufferCount(static_cast<uint32_t>(commandBuffers.size()));
 
-        commandBuffer = appDevice.device().allocateCommandBuffers(allocInfo);
+        commandBuffers = appDevice.device().allocateCommandBuffers(allocInfo);
 
-        for (int i = 0; i < commandBuffer.size(); i++) {
+        for (int i = 0; i < commandBuffers.size(); i++) {
             vk::CommandBufferBeginInfo beginInfo;
-            commandBuffer[i].begin(beginInfo);
+            commandBuffers[i].begin(beginInfo);
 
             vk::RenderPassBeginInfo renderPassInfo;
             renderPassInfo.setRenderPass(appSwapchain.getRenderPass())
@@ -71,13 +74,17 @@ namespace vkEG {
             clearValue[1].setDepthStencil({1.0f,0});
             renderPassInfo.setClearValueCount(static_cast<uint32_t>(clearValue.size()))
                           .setClearValues(clearValue);
-            commandBuffer[i].beginRenderPass(renderPassInfo,vk::SubpassContents::eInline);
+            commandBuffers[i].beginRenderPass(renderPassInfo,vk::SubpassContents::eInline);
             
-            appPipeline->bind(commandBuffer[i]);
-            commandBuffer[i].draw(3, 1, 0, 0);
+            appPipeline->bind(commandBuffers[i]);
+            //删除
+            // commandBuffer[i].draw(3, 1, 0, 0);
 
-            commandBuffer[i].endRenderPass();
-            commandBuffer[i].end();
+            model->bind(commandBuffers[i]);
+            model->draw(commandBuffers[i]);
+
+            commandBuffers[i].endRenderPass();
+            commandBuffers[i].end();
         }
 
     }
@@ -87,9 +94,17 @@ namespace vkEG {
         if (result != vk::Result::eSuccess) {
             std::cout << "acquire swapchain image failed" << std::endl;
         }
-        result = appSwapchain.submitCommandBuffers(&commandBuffer[imageIndex], &imageIndex);
+        result = appSwapchain.submitCommandBuffers(&commandBuffers[imageIndex], &imageIndex);
         if (result != vk::Result::eSuccess) {
             std::cout << "present swapchain image failed" << std::endl;
         }
     }
+    void FirstApp::loadModels(){
+        std::vector<Model::Vertex> vertices{
+            {{0.0f,-0.5f}},
+            {{0.5f,0.5f}},
+            {{-0.5f,0.5f}}
+        };
+        model = std::make_unique<Model>(appDevice,vertices);
+    };
 }

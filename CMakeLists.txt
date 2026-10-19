@@ -24,18 +24,15 @@ foreach(LIBRARY ${LIBRARIES})
     if(IS_DIRECTORY ${LIBRARY})
 
         message(STATUS "Found library: ${LIBRARY}")
-
-
-        if(EXISTS ${LIBRARY}/include)
-
-            include_directories(
-                ${LIBRARY}/include
-            )
-
-            message(STATUS
-                "Add include: ${LIBRARY}/include"
-            )
-
+         # 自动扫描库根目录
+        if(EXISTS "${LIBRARY}")
+            include_directories("${LIBRARY}")
+            message(STATUS "Add include: ${LIBRARY}")
+        endif()
+        # 自动扫描 include 目录
+        if(IS_DIRECTORY "${LIBRARY}/include")
+            include_directories("${LIBRARY}/include")
+            message(STATUS "Add include: ${LIBRARY}/include")
         endif()
 
     endif()
