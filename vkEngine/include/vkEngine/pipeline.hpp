@@ -25,7 +25,7 @@ namespace vkEG {
             Pipeline(Device &device,const PipelineConfigInfo configInfo,const std::string& vertFilepath,const std::string& fragFilepath);
             ~Pipeline();
             Pipeline(const Pipeline&) = delete;
-            void operator=(const Pipeline&) = delete;
+            Pipeline& operator=(const Pipeline&) = delete;
 
             void bind(vk::CommandBuffer commandBuffer);
             static PipelineConfigInfo defaultPipelineConfigInfo(uint32_t width,uint32_t height);

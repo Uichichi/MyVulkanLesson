@@ -17,6 +17,7 @@ namespace vkEG {
         public:
             struct Vertex{
                 glm::vec2 position;
+                glm::vec3 color;
                 static std::vector<vk::VertexInputBindingDescription> getBindingDescriputions();
                 static std::vector<vk::VertexInputAttributeDescription> getAttributeDescriputions();
             };

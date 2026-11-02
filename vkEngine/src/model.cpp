@@ -1,6 +1,7 @@
 #include "vkEngine/model.hpp"
 #include "vulkan/vulkan.hpp"
 #include <cassert>
+#include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <vector>
@@ -43,11 +44,17 @@ namespace vkEG {
         return bindingDescriputions;
     };
     std::vector<vk::VertexInputAttributeDescription> Model::Vertex::getAttributeDescriputions(){
-        std::vector<vk::VertexInputAttributeDescription> attributeDescriputions(1);
+        //属性描述向量大小
+        std::vector<vk::VertexInputAttributeDescription> attributeDescriputions(2);
         attributeDescriputions[0].binding = 0;
         attributeDescriputions[0].location = 0;
         attributeDescriputions[0].format = vk::Format::eR32G32Sfloat;
-        attributeDescriputions[0].offset = 0;
+        attributeDescriputions[0].offset = offsetof(Vertex, position);
+
+        attributeDescriputions[1].binding = 0;
+        attributeDescriputions[1].location = 1;
+        attributeDescriputions[1].format = vk::Format::eR32G32B32Sfloat;
+        attributeDescriputions[1].offset = offsetof(Vertex, color);
         return attributeDescriputions;
     };
 }
