@@ -33,10 +33,13 @@ namespace vkEG {
             void createPipelineLayout();
             void createPipeline();
             void createCommandBuffers();
+            void freeCommandBuffers();
             void drawFrame();
+            void recreateSwapchain();
+            void recordCommandBuffer(int imageIndex);
             Window appWindow{WIDTH,HEIGHT,"HELLO VULKAN!"};
             Device appDevice{appWindow};
-            Swapchain appSwapchain{appDevice,appWindow.getExtent()};
+            std::unique_ptr<Swapchain> appSwapchain;
             //Pipeline appPipeline{appDevice,Pipeline::defaultPipelineConfigInfo(WIDTH, HEIGHT),"simple_shader.vert.spv","simple_shader.frag.spv"};
             std::unique_ptr<Pipeline> appPipeline;
             vk::PipelineLayout pipelineLayout;

@@ -10,7 +10,7 @@
 
 #include "vkEngine/model.hpp"
 namespace vkEG{
-    Pipeline::Pipeline(Device &device,const PipelineConfigInfo configInfo,const std::string& vertFilepath,const std::string& fragFilepath)
+    Pipeline::Pipeline(Device &device,const PipelineConfigInfo& configInfo,const std::string& vertFilepath,const std::string& fragFilepath)
     : device_{device}{
         createGraphicsPipeline(configInfo,vertFilepath,fragFilepath);
     };
@@ -34,7 +34,7 @@ namespace vkEG{
         file.close();
         return buffer;
     };
-    void Pipeline::createGraphicsPipeline(const PipelineConfigInfo configInfo,const std::string& vertFilepath,const std::string& fragFilepath){
+    void Pipeline::createGraphicsPipeline(const PipelineConfigInfo& configInfo,const std::string& vertFilepath,const std::string& fragFilepath){
         auto vertCode = readFile(vertFilepath);
         auto fragCode = readFile(fragFilepath);
 
@@ -63,11 +63,11 @@ namespace vkEG{
                        .setVertexAttributeDescriptionCount(static_cast<uint32_t>(attributeDescriputions.size()))
                        .setPVertexAttributeDescriptions(attributeDescriputions.data());
 
-        vk::PipelineViewportStateCreateInfo viewportInfo;
+        /*vk::PipelineViewportStateCreateInfo viewportInfo;
         viewportInfo.setViewportCount(1)                               
-                    .setPViewports(&configInfo.viewport)
+                    .setPViewports(nullptr)
                     .setScissorCount(1)
-                    .setPScissors(&configInfo.scissor);
+                    .setPScissors(nullptr);*/
 
 
         vk::GraphicsPipelineCreateInfo pipelineInfo{};
@@ -75,7 +75,7 @@ namespace vkEG{
                     .setPStages(shaderStages)
                     .setPVertexInputState(&vertexInputInfo)
                     .setPInputAssemblyState(&configInfo.inputAssemblyInfo)
-                    .setPViewportState(&viewportInfo)
+                    .setPViewportState(&configInfo.viewportInfo)
                     .setPRasterizationState(&configInfo.rasterizationInfo)
                     .setPMultisampleState(&configInfo.multisampleInfo)
                     .setPColorBlendState(&configInfo.colorBlendInfo)
@@ -84,7 +84,8 @@ namespace vkEG{
                     .setRenderPass(configInfo.renderPass)
                     .setSubpass(configInfo.subpass)
                     .setBasePipelineHandle(nullptr)
-                    .setBasePipelineIndex(-1);
+                    .setBasePipelineIndex(-1)
+                    .setPDynamicState(&configInfo.dynamicStateInfo);
 
         auto result = device_.device().createGraphicsPipeline(nullptr, pipelineInfo);
         graphicsPipeline = result.value;
@@ -95,20 +96,15 @@ namespace vkEG{
                   .setPCode(reinterpret_cast<const uint32_t*>(code.data()));
         shaderModule = device_.device().createShaderModule(createInfo);
     };
-    PipelineConfigInfo Pipeline::defaultPipelineConfigInfo(uint32_t width,uint32_t height){
-            PipelineConfigInfo configInfo{};
+    void Pipeline::defaultPipelineConfigInfo(PipelineConfigInfo& configInfo){
+            
             configInfo.inputAssemblyInfo.setTopology(vk::PrimitiveTopology::eTriangleList)
                                         .setPrimitiveRestartEnable(vk::False);
-
-            configInfo.viewport.setX(0.0f)
-                               .setY(0.0f)
-                               .setWidth(static_cast<float>(width))
-                               .setHeight(static_cast<float>(height))
-                               .setMinDepth(0.0f)
-                               .setMaxDepth(1.0f);
-
-            configInfo.scissor.setOffset({0, 0})
-                              .setExtent({width, height});
+            
+            configInfo.viewportInfo.setViewportCount(1)
+                                   .setPViewports(nullptr)
+                                   .setScissorCount(1)
+                                   .setPScissors(nullptr);
 
             configInfo.rasterizationInfo.setDepthClampEnable(vk::False)
                                         .setRasterizerDiscardEnable(vk::False)
@@ -158,7 +154,10 @@ namespace vkEG{
                                        .setFront({})
                                        .setBack({});
 
-            return configInfo;
+            configInfo.dynamicStateEnables = {vk::DynamicState::eViewport,vk::DynamicState::eScissor};
+
+            configInfo.dynamicStateInfo.setDynamicStates(configInfo.dynamicStateEnables)
+                                       .setFlags({});
         };
         void Pipeline::bind(vk::CommandBuffer commandBuffer){
             commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, graphicsPipeline);

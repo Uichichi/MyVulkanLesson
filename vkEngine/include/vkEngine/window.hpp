@@ -15,11 +15,16 @@ namespace vkEG {
             //为防止改太多，这里surface就保留指针类型
             void createWindowSurface(vk::Instance instance,vk::SurfaceKHR *surface);
             vk::Extent2D getExtent(){return {static_cast<uint32_t>(width_),static_cast<uint32_t>(height_)};}
-            
+            bool wasWindowResized(){return framebufferResized;};
+            void resetWindowResizedFlag(){framebufferResized = false;};
+
         private:
+            static void framebufferResizeCallback(GLFWwindow *window,int width,int height);
+            
             void initWindow();
             int width_;
             int height_;
+            bool framebufferResized = false;
 
             std::string windowName_;
             GLFWwindow *window_;

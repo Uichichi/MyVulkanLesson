@@ -3,6 +3,7 @@
 #include "vkEngine/device.hpp"
 
 #include <cstdint>
+#include <memory>
 #include <vector>
 
 namespace vkEG {
@@ -12,12 +13,11 @@ public:
     static constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 2;
 
     Swapchain(Device& device, vk::Extent2D windowExtent);
+    Swapchain(Device& device, vk::Extent2D windowExtent, std::unique_ptr<Swapchain> previousSwapchain);
     ~Swapchain();
 
     Swapchain(const Swapchain&) = delete;
     Swapchain& operator=(const Swapchain&) = delete;
-    Swapchain(Swapchain&&) = delete;
-    Swapchain& operator=(Swapchain&&) = delete;
 
     vk::Framebuffer getFramebuffer(uint32_t index) const { return swapchainFramebuffers_[index]; }
     vk::RenderPass getRenderPass() const { return renderPass_; }
@@ -37,6 +37,7 @@ public:
     vk::Result submitCommandBuffers(const vk::CommandBuffer* buffers, uint32_t* imageIndex);
 
 private:
+    void init();
     void createSwapchain();
     void createImageViews();
     void createDepthResources();
@@ -63,6 +64,7 @@ private:
     Device& device_;
     vk::Extent2D windowExtent_;
     vk::SwapchainKHR swapchain_{};
+    std::unique_ptr<Swapchain> previousSwapchain_;
 
     std::vector<vk::Semaphore> imageAvailableSemaphores_;
     std::vector<vk::Semaphore> renderFinishedSemaphores_;
