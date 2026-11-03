@@ -25,6 +25,7 @@ namespace vkEG {
         previousSwapchain_.reset();
     }
 
+    // 释放交换链及其图像视图、深度资源、帧缓冲和同步对象。
     Swapchain::~Swapchain() {
         const vk::Device logicalDevice = device_.device();
 
@@ -68,6 +69,7 @@ namespace vkEG {
             swapchain_, std::numeric_limits<uint64_t>::max(), imageAvailableSemaphores_[currentFrame_], vk::Fence{}, imageIndex);
     }
 
+    // 等待图像可用后提交绘制，通过信号量衔接呈现并推进当前帧。
     vk::Result Swapchain::submitCommandBuffers(const vk::CommandBuffer* buffers, uint32_t* imageIndex) {
         if (!buffers || !imageIndex || *imageIndex >= imagesInFlight_.size() ||
             *imageIndex >= renderFinishedSemaphores_.size() || currentFrame_ >= inFlightFences_.size() ||
@@ -121,6 +123,7 @@ namespace vkEG {
         return result;
     }
 
+    // 选择交换链参数和队列共享方式，关联旧交换链并获取新图像。
     void Swapchain::createSwapchain() {
         const SwapChainSupportDetails support = device_.getSwapChainSupport();
         if (support.formats.empty() || support.presentModes.empty()) {
@@ -210,6 +213,7 @@ namespace vkEG {
         }
     }
 
+    // 配置颜色和深度附件、绘制子通道及同步依赖，创建渲染通道。
     void Swapchain::createRenderPass() {
         vk::AttachmentDescription depthAttachment;
         depthAttachment.setFormat(findDepthFormat())
@@ -266,6 +270,7 @@ namespace vkEG {
         }
     }
 
+    // 将每张交换链图像的颜色视图和深度视图组合成帧缓冲。
     void Swapchain::createFramebuffers() {
         swapchainFramebuffers_.resize(imageCount());
         for (size_t i = 0; i < imageCount(); ++i) {
@@ -286,6 +291,7 @@ namespace vkEG {
         }
     }
 
+    // 为每张交换链图像创建独立的深度图像、显存和图像视图。
     void Swapchain::createDepthResources() {
         const vk::Format depthFormat = findDepthFormat();
         depthImages_.resize(imageCount());
@@ -331,6 +337,7 @@ namespace vkEG {
         }
     }
 
+    // 按帧创建图像可用信号量和围栏，按图像创建渲染完成信号量。
     void Swapchain::createSyncObjects() {
         imageAvailableSemaphores_.resize(MAX_FRAMES_IN_FLIGHT);
         renderFinishedSemaphores_.resize(imageCount());

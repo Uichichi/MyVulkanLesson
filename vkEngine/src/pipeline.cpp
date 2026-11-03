@@ -34,6 +34,7 @@ namespace vkEG{
         file.close();
         return buffer;
     };
+    // 加载着色器，结合顶点布局和各阶段配置创建图形管线。
     void Pipeline::createGraphicsPipeline(const PipelineConfigInfo& configInfo,const std::string& vertFilepath,const std::string& fragFilepath){
         auto vertCode = readFile(vertFilepath);
         auto fragCode = readFile(fragFilepath);
@@ -96,6 +97,7 @@ namespace vkEG{
                   .setPCode(reinterpret_cast<const uint32_t*>(code.data()));
         shaderModule = device_.device().createShaderModule(createInfo);
     };
+    // 设置三角形绘制、光栅化、深度测试等默认状态，并启用动态视口和裁剪。
     void Pipeline::defaultPipelineConfigInfo(PipelineConfigInfo& configInfo){
             
             configInfo.inputAssemblyInfo.setTopology(vk::PrimitiveTopology::eTriangleList)

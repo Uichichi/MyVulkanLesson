@@ -66,6 +66,7 @@ namespace vkEG {
         commandBuffers.clear();
     };
 
+    // 录制清屏、视口和裁剪设置、管线绑定及模型绘制命令。
     void FirstApp::recordCommandBuffer(int imageIndex){
         vk::CommandBufferBeginInfo beginInfo;
             commandBuffers[imageIndex].begin(beginInfo);
@@ -112,6 +113,7 @@ namespace vkEG {
             commandBuffers[imageIndex].endRenderPass();
             commandBuffers[imageIndex].end();
     }
+    // 等待窗口尺寸有效且设备空闲后重建交换链，按需重分配命令缓冲并重建管线。
     void FirstApp::recreateSwapchain(){
         auto extent = appWindow.getExtent();
         while (extent.width == 0 || extent.height == 0) {
@@ -131,6 +133,7 @@ namespace vkEG {
         //如果渲染管线兼容，则无需创建新管线
         createPipeline();
     }
+    // 获取交换链图像、录制并提交绘制，在交换链失效或窗口缩放时重建。
     void FirstApp::drawFrame(){
         uint32_t imageIndex;
         auto result = appSwapchain->acquireNextImage(&imageIndex);

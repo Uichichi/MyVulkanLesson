@@ -21,6 +21,7 @@ Device::~Device() {
     instance_.destroy();
 }
 
+// 配置应用信息、窗口所需扩展和可选验证层，创建 Vulkan 实例。
 void Device::createInstance() {
     vk::ApplicationInfo appInfo;
 
@@ -50,6 +51,7 @@ void Device::createInstance() {
     hasGflwRequiredInstanceExtensions();
 }
 
+// 选择首个满足渲染要求的 GPU，并保存其设备属性。
 void Device::pickPhysicalDevice() {
     auto devices = instance_.enumeratePhysicalDevices();
 
@@ -72,6 +74,7 @@ void Device::pickPhysicalDevice() {
     std::cout << "physical device: " << properties_.deviceName << std::endl;
 }
 
+// 为图形和呈现队列创建逻辑设备，启用所需扩展及各向异性采样。
 void Device::createLogicalDevice() {
     QueueFamilyIndices indices = findQueueFamilies(physicalDevice_);
 
@@ -138,6 +141,7 @@ void Device::createSurface() {
     window_.createWindowSurface(instance_, &surface_);
 }
 
+// 检查 GPU 的队列族、设备扩展、交换链支持和各向异性采样能力。
 bool Device::isDeviceSuitable(vk::PhysicalDevice device) {
     QueueFamilyIndices indices = findQueueFamilies(device);
 
@@ -170,6 +174,7 @@ std::vector<const char *> Device::getRequiredExtensions() {
     return extensions;
 }
 
+// 列出实例扩展，并确认 GLFW 所需的扩展全部可用。
 void Device::hasGflwRequiredInstanceExtensions() {
     uint32_t extensionCount = 0;
     vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
@@ -207,6 +212,7 @@ bool Device::checkDeviceExtensionSupport(vk::PhysicalDevice device) {
     return requiredExtensions.empty();
 }
 
+// 遍历队列族，找到支持图形渲染和当前窗口呈现的队列族索引。
 QueueFamilyIndices Device::findQueueFamilies(vk::PhysicalDevice device) {
     QueueFamilyIndices indices;
 
@@ -291,6 +297,7 @@ uint32_t Device::findMemoryType(uint32_t typeFilter,
     return NULL;
 }
 
+// 创建缓冲区，按内存要求分配指定属性的内存并绑定。
 void Device::createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage,
                           vk::MemoryPropertyFlags properties,
                           vk::Buffer &buffer, vk::DeviceMemory &bufferMemory) {
@@ -322,6 +329,7 @@ void Device::createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage,
     device_.bindBufferMemory(buffer, bufferMemory, 0);
 }
 
+// 从命令池分配主命令缓冲区，并开始一次性命令录制。
 vk::CommandBuffer Device::beginSingleTimeCommands() {
     vk::CommandBufferAllocateInfo allocInfo;
     allocInfo.setLevel(vk::CommandBufferLevel::ePrimary)
@@ -341,6 +349,7 @@ vk::CommandBuffer Device::beginSingleTimeCommands() {
     return commandBuffer;
 }
 
+// 提交一次性命令，等待图形队列执行完毕后释放命令缓冲区。
 void Device::endSingleTimeCommands(vk::CommandBuffer commandBuffer) {
     commandBuffer.end();
 
@@ -397,6 +406,7 @@ void Device::copyBufferToImage(vk::Buffer buffer, vk::Image image,
     endSingleTimeCommands(commandBuffer);
 }
 
+// 按给定配置创建图像，分配满足要求的内存并绑定。
 void Device::createImageWithInfo(const vk::ImageCreateInfo &imageInfo,
                                  vk::MemoryPropertyFlags properties,
                                  vk::Image &image,
