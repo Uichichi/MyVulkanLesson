@@ -6,3 +6,4 @@ build.ps1
 CMakeCache.txt
 *.spv
 .clangd
+.glsld

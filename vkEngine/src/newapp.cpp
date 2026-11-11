@@ -7,6 +7,10 @@
 #include "vulkan/vulkan.hpp"
 #include "GLFW/glfw3.h"
 
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_Z_ZERO_TO_ONE
+#include <glm/glm.hpp>
+
 #include <array>
 #include <cstdint>
 #include <memory>
@@ -15,6 +19,12 @@
 
 
 namespace vkEG {
+    struct SimplePushConstantData{
+        glm::vec2 offset;
+        //要求字节对齐
+        alignas(16)
+        glm::vec3 color;
+    };
     FirstApp::FirstApp(){
         loadModels();
         createPipelineLayout();
@@ -35,11 +45,17 @@ namespace vkEG {
     };
 
     void FirstApp::createPipelineLayout(){
+        vk::PushConstantRange pushConstantRange;
+        pushConstantRange.setStageFlags(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment)
+                         .setOffset(0)
+                         .setSize(sizeof(SimplePushConstantData));
+
+
         vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
         pipelineLayoutInfo.setSetLayoutCount(0)
                           .setPSetLayouts(nullptr)
                           .setPushConstantRangeCount(0)
-                          .setPPushConstantRanges(nullptr);
+                          .setPPushConstantRanges(&pushConstantRange);
         pipelineLayout = appDevice.device().createPipelineLayout(pipelineLayoutInfo);
     };
     void FirstApp::createPipeline(){
@@ -68,6 +84,10 @@ namespace vkEG {
 
     // 录制清屏、视口和裁剪设置、管线绑定及模型绘制命令。
     void FirstApp::recordCommandBuffer(int imageIndex){
+        static int frame = 0;
+        //一千帧循环一次
+        frame = (frame + 1) % 100;
+
         vk::CommandBufferBeginInfo beginInfo;
             commandBuffers[imageIndex].begin(beginInfo);
 
@@ -80,7 +100,7 @@ namespace vkEG {
                           // .setExtent(lveSwapChain.getSwapChainExtent())
                           .renderArea.setExtent(appSwapchain->getSwapchainExtent());
             std::array<vk::ClearValue, 2> clearValue{};
-            clearValue[0].setColor({0.1f,0.1f,0.1f,1.0f});
+            clearValue[0].setColor({0.01f,0.01f,0.01f,1.0f});
             clearValue[1].setDepthStencil({1.0f,0});
             renderPassInfo.setClearValueCount(static_cast<uint32_t>(clearValue.size()))
                           .setClearValues(clearValue);
@@ -108,7 +128,18 @@ namespace vkEG {
             // commandBuffer[i].draw(3, 1, 0, 0);
 
             model->bind(commandBuffers[imageIndex]);
-            model->draw(commandBuffers[imageIndex]);
+            //推送常量通常用于存储变换矩阵
+            for(int i = 0;i < 4;i++){
+                SimplePushConstantData push{};
+                push.offset = {-0.5f + frame * 0.02f,-0.4f + i * 0.25f};
+                //颜色从深蓝到浅蓝
+                push.color = {0.0f,0.0f,0.2f + 0.2f * i};
+
+                commandBuffers[imageIndex].pushConstants(pipelineLayout,vk::ShaderStageFlagBits::eVertex|vk::ShaderStageFlagBits::eFragment,0,sizeof(SimplePushConstantData),&push);
+                model->draw(commandBuffers[imageIndex]);
+            }
+
+            
 
             commandBuffers[imageIndex].endRenderPass();
             commandBuffers[imageIndex].end();
