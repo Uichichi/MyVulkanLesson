@@ -1,6 +1,8 @@
 #include "vkEngine/newapp.hpp"
+#include "glm/common.hpp"
 #include "vkEngine/device.hpp"
 #include "vkEngine/model.hpp"
+#include "vkEngine/object.hpp"
 #include "vkEngine/pipeline.hpp"
 
 #include "vkEngine/swapchain.hpp"
@@ -10,6 +12,8 @@
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_Z_ZERO_TO_ONE
 #include <glm/glm.hpp>
+#include <glm/gtc/constants.hpp>
+
 
 #include <array>
 #include <cstdint>
@@ -20,23 +24,24 @@
 
 namespace vkEG {
     struct SimplePushConstantData{
+        glm::mat2 transform{1.f};
         glm::vec2 offset;
         //要求字节对齐
         alignas(16)
         glm::vec3 color;
     };
-    FirstApp::FirstApp(){
-        loadModels();
+    NewApp::NewApp(){
+        loadObjects();
         createPipelineLayout();
         //createPipeline();
         recreateSwapchain();
         createCommandBuffers();
     }
 
-    FirstApp::~FirstApp(){
+    NewApp::~NewApp(){
         appDevice.device().destroyPipelineLayout(pipelineLayout);
     }
-    void FirstApp::run(){
+    void NewApp::run(){
         while (!appWindow.shouldClose()) {
             glfwPollEvents();
             drawFrame();
@@ -44,7 +49,7 @@ namespace vkEG {
         appDevice.device().waitIdle();
     };
 
-    void FirstApp::createPipelineLayout(){
+    void NewApp::createPipelineLayout(){
         vk::PushConstantRange pushConstantRange;
         pushConstantRange.setStageFlags(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment)
                          .setOffset(0)
@@ -58,14 +63,14 @@ namespace vkEG {
                           .setPPushConstantRanges(&pushConstantRange);
         pipelineLayout = appDevice.device().createPipelineLayout(pipelineLayoutInfo);
     };
-    void FirstApp::createPipeline(){
+    void NewApp::createPipeline(){
         PipelineConfigInfo pipelineConfig{};
         Pipeline::defaultPipelineConfigInfo(pipelineConfig);
         pipelineConfig.renderPass = appSwapchain->getRenderPass();
         pipelineConfig.pipelineLayout = pipelineLayout;
         appPipeline = std::make_unique<Pipeline>(appDevice,pipelineConfig,"simple_shader.vert.spv","simple_shader.frag.spv");
     };
-    void FirstApp::createCommandBuffers(){
+    void NewApp::createCommandBuffers(){
         commandBuffers.resize(appSwapchain->imageCount());
 
         vk::CommandBufferAllocateInfo allocInfo;
@@ -77,17 +82,13 @@ namespace vkEG {
         commandBuffers = appDevice.device().allocateCommandBuffers(allocInfo);
     }
 
-    void FirstApp::freeCommandBuffers(){
+    void NewApp::freeCommandBuffers(){
         appDevice.device().freeCommandBuffers(appDevice.getCommandPool(),static_cast<uint32_t>(commandBuffers.size()),commandBuffers.data());
         commandBuffers.clear();
     };
 
     // 录制清屏、视口和裁剪设置、管线绑定及模型绘制命令。
-    void FirstApp::recordCommandBuffer(int imageIndex){
-        static int frame = 0;
-        //一千帧循环一次
-        frame = (frame + 1) % 100;
-
+    void NewApp::recordCommandBuffer(int imageIndex){
         vk::CommandBufferBeginInfo beginInfo;
             commandBuffers[imageIndex].begin(beginInfo);
 
@@ -122,30 +123,34 @@ namespace vkEG {
 
             commandBuffers[imageIndex].setViewport(0, viewport);
             commandBuffers[imageIndex].setScissor(0, scissor);  
-                    
-            appPipeline->bind(commandBuffers[imageIndex]);
-            //删除
-            // commandBuffer[i].draw(3, 1, 0, 0);
-
-            model->bind(commandBuffers[imageIndex]);
-            //推送常量通常用于存储变换矩阵
-            for(int i = 0;i < 4;i++){
-                SimplePushConstantData push{};
-                push.offset = {-0.5f + frame * 0.02f,-0.4f + i * 0.25f};
-                //颜色从深蓝到浅蓝
-                push.color = {0.0f,0.0f,0.2f + 0.2f * i};
-
-                commandBuffers[imageIndex].pushConstants(pipelineLayout,vk::ShaderStageFlagBits::eVertex|vk::ShaderStageFlagBits::eFragment,0,sizeof(SimplePushConstantData),&push);
-                model->draw(commandBuffers[imageIndex]);
-            }
-
             
+            renderObjects(commandBuffers[imageIndex]);
 
             commandBuffers[imageIndex].endRenderPass();
             commandBuffers[imageIndex].end();
     }
+
+    void NewApp::renderObjects(vk::CommandBuffer commandBuffer){
+        appPipeline->bind(commandBuffer);
+        
+        for (auto& obj: objects) {
+            obj.transform2d.rotation = glm::mod(obj.transform2d.rotation + 0.01f,glm::two_pi<float>());
+
+            SimplePushConstantData push{};
+            push.offset = obj.transform2d.transLation;
+            //颜色从深蓝到浅蓝
+            push.color = obj.color;
+            push.transform = obj.transform2d.mat2();
+            //推送常量通常用于存储变换矩阵
+            commandBuffer.pushConstants(pipelineLayout,vk::ShaderStageFlagBits::eVertex|vk::ShaderStageFlagBits::eFragment,0,sizeof(SimplePushConstantData),&push);
+            
+            obj.model->bind(commandBuffer);
+            obj.model->draw(commandBuffer);
+        }
+    };
+
     // 等待窗口尺寸有效且设备空闲后重建交换链，按需重分配命令缓冲并重建管线。
-    void FirstApp::recreateSwapchain(){
+    void NewApp::recreateSwapchain(){
         auto extent = appWindow.getExtent();
         while (extent.width == 0 || extent.height == 0) {
             extent = appWindow.getExtent();
@@ -165,7 +170,7 @@ namespace vkEG {
         createPipeline();
     }
     // 获取交换链图像、录制并提交绘制，在交换链失效或窗口缩放时重建。
-    void FirstApp::drawFrame(){
+    void NewApp::drawFrame(){
         uint32_t imageIndex;
         auto result = appSwapchain->acquireNextImage(&imageIndex);
         if (result == vk::Result::eErrorOutOfDateKHR) {
@@ -187,12 +192,23 @@ namespace vkEG {
             std::cout << "present swapchain image failed" << std::endl;
         }
     }
-    void FirstApp::loadModels(){
+    void NewApp::loadObjects(){
         std::vector<Model::Vertex> vertices{
             {{0.0f,-0.5f},{1.0f,0.0f,0.0f}},
             {{0.5f,0.5f},{0.0f,1.0f,0.0f}},
             {{-0.5f,0.5f},{0.0f,0.0f,1.0f}}
         };
-        model = std::make_unique<Model>(appDevice,vertices);
+        auto model = std::make_shared<Model>(appDevice,vertices);
+
+        auto triangle = Object::createObject();
+        triangle.model = model;
+        triangle.color = {.1f,.8f,.1f};
+        triangle.transform2d.transLation.x = .2f;
+        triangle.transform2d.scale  ={.2f,.5f};
+        //vulkan的y轴和常规数学相反，y在x轴上是负数
+        triangle.transform2d.rotation = .25f * glm::two_pi<float>();
+
+        objects.push_back(std::move(triangle));
     };
+
 }

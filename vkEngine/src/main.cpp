@@ -1,7 +1,7 @@
 #include "vkEngine/newapp.hpp"
 
 int main(){
-    vkEG::FirstApp app{};
+    vkEG::NewApp app{};
     app.run();
 
     return 0;

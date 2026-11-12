@@ -12,24 +12,24 @@
 #include "vkEngine/swapchain.hpp"
 #include "vkEngine/window.hpp"
 #include "vkEngine/window.hpp"
-
+#include "vkEngine/object.hpp"
 
 namespace vkEG {
-    class FirstApp{
+    class NewApp{
         public:
             int WIDTH = 800;
             int HEIGHT = 600;
 
-            FirstApp();
-            ~FirstApp();
+            NewApp();
+            ~NewApp();
             //删除拷贝构造和移动构造
-            FirstApp(const FirstApp&) = delete;
-            FirstApp& operator=(const FirstApp&) = delete;
+            NewApp(const NewApp&) = delete;
+            NewApp& operator=(const NewApp&) = delete;
 
             void run();
 
         private:
-            void loadModels();
+            void loadObjects();
             void createPipelineLayout();
             void createPipeline();
             void createCommandBuffers();
@@ -37,6 +37,8 @@ namespace vkEG {
             void drawFrame();
             void recreateSwapchain();
             void recordCommandBuffer(int imageIndex);
+            void renderObjects(vk::CommandBuffer commandBuffer);
+
             Window appWindow{WIDTH,HEIGHT,"HELLO VULKAN!"};
             Device appDevice{appWindow};
             std::unique_ptr<Swapchain> appSwapchain;
@@ -44,7 +46,7 @@ namespace vkEG {
             std::unique_ptr<Pipeline> appPipeline;
             vk::PipelineLayout pipelineLayout;
             std::vector<vk::CommandBuffer> commandBuffers;
-            std::unique_ptr<Model> model;
+            std::vector<Object> objects;
     };
 
 }
