@@ -1,4 +1,5 @@
 #include "vkEngine/swapchain.hpp"
+#include "vulkan/vulkan.hpp"
 
 #include <array>
 #include <algorithm>
@@ -18,7 +19,7 @@ namespace vkEG {
     Swapchain::Swapchain(Device& device, vk::Extent2D windowExtent)
     :Swapchain(device, windowExtent, nullptr) {}
 
-    Swapchain::Swapchain(Device& device, vk::Extent2D windowExtent, std::unique_ptr<Swapchain> previousSwapchain)
+    Swapchain::Swapchain(Device& device, vk::Extent2D windowExtent, std::shared_ptr<Swapchain> previousSwapchain)
     :device_{device}, windowExtent_{windowExtent}, previousSwapchain_{std::move(previousSwapchain)} {
         init();
         //the same as previousSwapchain_ = nullptr;
@@ -243,26 +244,26 @@ namespace vkEG {
 
         vk::SubpassDescription subpass;
         subpass.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics)
-            .setColorAttachmentCount(1)
-            .setPColorAttachments(&colorAttachmentRef)
-            .setPDepthStencilAttachment(&depthAttachmentRef);
+               .setColorAttachmentCount(1)
+               .setPColorAttachments(&colorAttachmentRef)
+               .setPDepthStencilAttachment(&depthAttachmentRef);
 
         vk::SubpassDependency dependency;
         dependency.setSrcSubpass(VK_SUBPASS_EXTERNAL)
-            .setDstSubpass(0)
-            .setSrcStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput)
-            .setDstStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput)
-            .setSrcAccessMask(vk::AccessFlags{})
-            .setDstAccessMask(vk::AccessFlagBits::eColorAttachmentWrite);
+                  .setDstSubpass(0)
+                  .setSrcStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput|vk::PipelineStageFlagBits::eEarlyFragmentTests)
+                  .setDstStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput|vk::PipelineStageFlagBits::eEarlyFragmentTests)
+                  .setSrcAccessMask(vk::AccessFlags{})
+                  .setDstAccessMask(vk::AccessFlagBits::eColorAttachmentWrite|vk::AccessFlagBits::eDepthStencilAttachmentWrite);
 
         const std::array<vk::AttachmentDescription, 2> attachments = {colorAttachment, depthAttachment};
         vk::RenderPassCreateInfo renderPassInfo;
         renderPassInfo.setAttachmentCount(static_cast<uint32_t>(attachments.size()))
-            .setPAttachments(attachments.data())
-            .setSubpassCount(1)
-            .setPSubpasses(&subpass)
-            .setDependencyCount(1)
-            .setPDependencies(&dependency);
+                      .setPAttachments(attachments.data())
+                      .setSubpassCount(1)
+                      .setPSubpasses(&subpass)
+                      .setDependencyCount(1)
+                      .setPDependencies(&dependency);
 
         vk::Result result = device_.device().createRenderPass(&renderPassInfo, nullptr, &renderPass_);
         if (result != vk::Result::eSuccess) {
@@ -294,6 +295,7 @@ namespace vkEG {
     // 为每张交换链图像创建独立的深度图像、显存和图像视图。
     void Swapchain::createDepthResources() {
         const vk::Format depthFormat = findDepthFormat();
+        swapchainDepthFormat_ = depthFormat;
         depthImages_.resize(imageCount());
         depthImageMemories_.resize(imageCount());
         depthImageViews_.resize(imageCount());

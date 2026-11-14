@@ -13,7 +13,7 @@ public:
     static constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 2;
 
     Swapchain(Device& device, vk::Extent2D windowExtent);
-    Swapchain(Device& device, vk::Extent2D windowExtent, std::unique_ptr<Swapchain> previousSwapchain);
+    Swapchain(Device& device, vk::Extent2D windowExtent, std::shared_ptr<Swapchain> previousSwapchain);
     ~Swapchain();
 
     Swapchain(const Swapchain&) = delete;
@@ -36,6 +36,10 @@ public:
     vk::Result acquireNextImage(uint32_t* imageIndex);
     vk::Result submitCommandBuffers(const vk::CommandBuffer* buffers, uint32_t* imageIndex);
 
+    bool compareSwapchainFormat(const Swapchain& swapchain)const{
+        return swapchain.swapchainDepthFormat_ == swapchainDepthFormat_ &&
+               swapchain.swapchainImageFormat_ == swapchainImageFormat_;
+    }
 private:
     void init();
     void createSwapchain();
@@ -50,6 +54,7 @@ private:
     vk::Extent2D chooseSwapExtent(const vk::SurfaceCapabilitiesKHR& capabilities);
 
     vk::Format swapchainImageFormat_{};
+    vk::Format swapchainDepthFormat_;
     vk::Extent2D swapchainExtent_{};
 
     std::vector<vk::Framebuffer> swapchainFramebuffers_;
@@ -64,7 +69,7 @@ private:
     Device& device_;
     vk::Extent2D windowExtent_;
     vk::SwapchainKHR swapchain_{};
-    std::unique_ptr<Swapchain> previousSwapchain_;
+    std::shared_ptr<Swapchain> previousSwapchain_;
 
     std::vector<vk::Semaphore> imageAvailableSemaphores_;
     std::vector<vk::Semaphore> renderFinishedSemaphores_;
